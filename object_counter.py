@@ -35,6 +35,7 @@ class ObjectCounter:
         self.view_img = False
         self.view_in_counts = True
         self.view_out_counts = True
+        self.view_flag = True
 
         self.names = None  # Classes names
         self.annotator = None  # Annotator
@@ -44,6 +45,7 @@ class ObjectCounter:
         self.in_counts = 0
         self.out_counts = 0
         self.counting_dict = {}
+        self.flag_dict = ["Safe", "Danger"]
         self.count_txt_thickness = 0
         self.count_txt_color = (0, 0, 0)
         self.count_color = (10, 10, 10)
@@ -173,34 +175,34 @@ class ObjectCounter:
                 # Draw bounding box
                 self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
 
-                # Draw Tracks
-                track_line = self.track_history[track_id]
-                track_line.append((float((box[0] + box[2]) / 2), float((box[1] + box[3]) / 2)))
-                if len(track_line) > 30:
-                    track_line.pop(0)
+                # # Draw Tracks
+                # track_line = self.track_history[track_id]
+                # track_line.append((float((box[0] + box[2]) / 2), float((box[1] + box[3]) / 2)))
+                # if len(track_line) > 30:
+                #     track_line.pop(0)
 
-                # Draw track trails
-                if self.draw_tracks:
-                    self.annotator.draw_centroid_and_tracks(
-                        track_line, color=self.track_color, track_thickness=self.track_thickness
-                    )
+                # # Draw track trails
+                # if self.draw_tracks:
+                #     self.annotator.draw_centroid_and_tracks(
+                #         track_line, color=self.track_color, track_thickness=self.track_thickness
+                #     )
 
                 prev_position = self.track_history[track_id][-2] if len(self.track_history[track_id]) > 1 else None
                 centroid = Point((box[:2] + box[2:]) / 2)
 
-                # Count objects
+                # Judment objects
                 if len(self.reg_pts) >= 3:  # any polygon
                     is_inside = self.counting_region.contains(centroid)
                     current_position = "in" if is_inside else "out"
 
                     if prev_position is not None:
                         if self.counting_dict[track_id] != current_position and is_inside:
-                            self.in_counts += 1
+                            self.flag_dict = "Safe"
                             self.counting_dict[track_id] = "in"
                            
                             
                         elif self.counting_dict[track_id] != current_position and not is_inside:
-                            self.out_counts += 1
+                            self.flag_dict = "Danger"
                             self.counting_dict[track_id] = "out"
                             
                         else:
@@ -217,18 +219,18 @@ class ObjectCounter:
                         current_position = "in" if is_inside else "out"
 
                         if self.counting_dict[track_id] != current_position and is_inside:
-                            self.in_counts += 1
+                            self.flag_dict = "Safe"
                             self.counting_dict[track_id] = "in"
                         elif self.counting_dict[track_id] != current_position and not is_inside:
-                            self.out_counts += 1
+                            self.flag_dict = "Danger"
                             self.counting_dict[track_id] = "out"
                         else:
                             self.counting_dict[track_id] = current_position
                     else:
                         self.counting_dict[track_id] = None
 
-        incount_label = f"Safe : {self.in_counts}"
-        outcount_label = f"Danger : {self.out_counts}"
+        incount_label = "Safe"
+        outcount_label = "Danger"
 
         # Display counts based on user choice
         counts_label = None
@@ -237,7 +239,7 @@ class ObjectCounter:
         elif not self.view_in_counts:
             counts_label = outcount_label
             self.annotator.count_labels(
-                    color=(0, 0, 0)
+                    color=(255, 255, 255)
                     )           
 
         elif not self.view_out_counts:
@@ -246,7 +248,12 @@ class ObjectCounter:
                     color=(255, 255, 255)
                     )
         else:
-            counts_label = f"{incount_label} {outcount_label}"
+            if current_position == "in" : 
+                counts_label = f"{incount_label}"
+            elif current_position =="out":
+                counts_label = f"{outcount_label}"
+            else :
+                counts_label = ""
 
         if counts_label is not None:
                     self.annotator.count_labels(
