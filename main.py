@@ -79,9 +79,6 @@ cv2.destroyAllWindows()
 while cap.isOpened():
     
     success, im0 = cap.read()
-    #setup point
-        #func setup (mouse point)
-    #return point
     if not success:
         print("Video frame is empty or video processing has been successfully completed.")
         break

@@ -160,11 +160,10 @@ class ObjectCounter:
             self.selected_point = None
 
     def extract_and_process_tracks(self, tracks):
-        """Extracts and processes tracks for object counting in a video stream."""
 
         # Annotator Init and region drawing
         self.annotator = Annotator(self.im0, self.tf, self.names)
-
+    
         if tracks[0].boxes.id is not None:
             boxes = tracks[0].boxes.xyxy.cpu()
             clss = tracks[0].boxes.cls.cpu().tolist()
@@ -258,6 +257,12 @@ class ObjectCounter:
         if counts_label is not None:
                     self.annotator.count_labels(
                     counts=counts_label,
+                    count_txt_size=self.count_txt_thickness,
+                    txt_color=self.count_txt_color
+                    )
+        if counts_label is None : 
+                    self.annotator.count_labels(
+                    counts="No Object",
                     count_txt_size=self.count_txt_thickness,
                     txt_color=self.count_txt_color
                     )
