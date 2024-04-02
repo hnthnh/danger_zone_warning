@@ -2,16 +2,24 @@ from ultralytics import YOLO
 import object_counter
 import cv2
 import numpy as np
+
+#Change model path //
 model = YOLO("model\yolov5nu.pt")
+
+counter = object_counter.ObjectCounter()
+
 cap = cv2.VideoCapture(0)
 assert cap.isOpened(), "Error reading video file"
+
 w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
+
 drawing = False
+
 ix = -1
 iy = -1
 region_points=[]
-counter = object_counter.ObjectCounter()
-def mouse_callback(event, x, y, flags, param):
+
+def get_position(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:  # Kiểm tra xem sự kiện có phải là click chuột trái không
         print("Tọa độ điểm ảnh (x, y):", x, y)
         region_points.append((x,y))
@@ -22,6 +30,7 @@ def mouse_callback(event, x, y, flags, param):
                  reg_pts=region_points,
                  classes_names=model.names,
                  draw_tracks=False)
+        
 def draw_rectangle(event,x,y,flag,params):
     global ix,iy,drawing
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -38,15 +47,19 @@ def draw_rectangle(event,x,y,flag,params):
                  reg_pts=region_points,
                  classes_names=model.names,
                  draw_tracks=True)     
+
 cv2.namedWindow(winname='Image')
-cv2.setMouseCallback('Image',mouse_callback)
+cv2.setMouseCallback('Image',get_position)
+
 ret, img = cap.read()
+
 while True:
     cv2.imshow('Image',img)
     key = cv2.waitKey(1)
     if key == ord('q'):
         break
 cv2.destroyAllWindows()
+
 while True:
     key = cv2.waitKey(1)
     if key == ord('q'):
@@ -58,5 +71,6 @@ while True:
     tracks = model.track(im0, persist=True, show=False, classes=[0],verbose=True)
 
     im0 = counter.start_counting(im0, tracks)
+
 cap.release()
 cv2.destroyAllWindows()
