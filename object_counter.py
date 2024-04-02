@@ -26,8 +26,8 @@ class ObjectCounter:
         self.reg_pts = [(20, 400), (1260, 400)]
         self.line_dist_thresh = 15
         self.counting_region = None
-        self.region_color = (255, 0, 255)
-        self.region_thickness = 5
+        self.region_color = (19, 249, 26)
+        self.region_thickness = 2
 
         # Image and annotation Information
         self.im0 = None
@@ -173,19 +173,6 @@ class ObjectCounter:
             for box, track_id, cls in zip(boxes, track_ids, clss):
                 # Draw bounding box
                 self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
-
-                # # Draw Tracks
-                # track_line = self.track_history[track_id]
-                # track_line.append((float((box[0] + box[2]) / 2), float((box[1] + box[3]) / 2)))
-                # if len(track_line) > 30:
-                #     track_line.pop(0)
-
-                # # Draw track trails
-                # if self.draw_tracks:
-                #     self.annotator.draw_centroid_and_tracks(
-                #         track_line, color=self.track_color, track_thickness=self.track_thickness
-                #     )
-
                 prev_position = self.track_history[track_id][-2] if len(self.track_history[track_id]) > 1 else None
                 centroid = Point((box[:2] + box[2:]) / 2)
 
@@ -193,6 +180,8 @@ class ObjectCounter:
                 if len(self.reg_pts) >= 3:  # any polygon
                     is_inside = self.counting_region.contains(centroid)
                     current_position = "in" if is_inside else "out"
+                    
+                        
 
                     if prev_position is not None:
                         if self.counting_dict[track_id] != current_position and is_inside:
