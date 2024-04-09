@@ -1,20 +1,15 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
-
 from collections import defaultdict
-
 import cv2
-
 from ultralytics.utils.checks import check_imshow, check_requirements
 from ultralytics.utils.plotting import Annotator, colors
-
 check_requirements("shapely>=2.0.0")
-
 from shapely.geometry import LineString, Point, Polygon
 
 
 class ObjectCounter:
     """A class to manage the counting of objects in a real-time video stream based on their tracks."""
-
+    
     def __init__(self):
         """Initializes the Counter with default values for various tracking and counting parameters."""
 
@@ -163,7 +158,7 @@ class ObjectCounter:
 
         # Annotator Init and region drawing
         self.annotator = Annotator(self.im0, self.tf, self.names)
-    
+       
         if tracks[0].boxes.id is not None:
             boxes = tracks[0].boxes.xyxy.cpu()
             clss = tracks[0].boxes.cls.cpu().tolist()
@@ -217,44 +212,45 @@ class ObjectCounter:
                     else:
                         self.counting_dict[track_id] = None
 
-        incount_label = "Safe"
-        outcount_label = "Danger"
+            incount_label = "Safe"
+            outcount_label = "Danger"
 
-        # Display counts based on user choice
-        counts_label = None
-        if not self.view_in_counts and not self.view_out_counts:
+            # Display counts based on user choice
             counts_label = None
-        elif not self.view_in_counts:
-            counts_label = outcount_label
-            self.annotator.count_labels(
-                    color=(255, 255, 255)
-                    )           
+            if not self.view_in_counts and not self.view_out_counts:
+                counts_label = None
+            elif not self.view_in_counts:
+                counts_label = outcount_label
+                self.annotator.count_labels(
+                        color=(255, 255, 255)
+                        )           
 
-        elif not self.view_out_counts:
-            counts_label = incount_label
-            self.annotator.count_labels(
-                    color=(255, 255, 255)
-                    )
-        else:
-            if current_position == "in" : 
-                counts_label = f"{incount_label}"
-            elif current_position =="out":
-                counts_label = f"{outcount_label}"
-            else :
-                counts_label = ""
+            elif not self.view_out_counts:
+                counts_label = incount_label
+                self.annotator.count_labels(
+                        color=(255, 255, 255)
+                        )
+            else:
+                if current_position is not None :
+                    if current_position == "in" : 
+                        counts_label = f"{incount_label}"
+                    elif current_position =="out":
+                        counts_label = f"{outcount_label}"
+                    else :
+                        counts_label = ""
 
-        if counts_label is not None:
-                    self.annotator.count_labels(
-                    counts=counts_label,
-                    count_txt_size=self.count_txt_thickness,
-                    txt_color=self.count_txt_color
-                    )
-        if counts_label is None : 
-                    self.annotator.count_labels(
-                    counts="No Object",
-                    count_txt_size=self.count_txt_thickness,
-                    txt_color=self.count_txt_color
-                    )
+            if counts_label is not None:
+                        self.annotator.count_labels(
+                        counts=counts_label,
+                        count_txt_size=self.count_txt_thickness,
+                        txt_color=self.count_txt_color
+                        )
+            if counts_label is None : 
+                        self.annotator.count_labels(
+                        counts="No Object",
+                        count_txt_size=self.count_txt_thickness,
+                        txt_color=self.count_txt_color
+                        )
 
     def display_frames(self):
         """Display frame."""
