@@ -4,23 +4,22 @@ import cv2
 import numpy as np
 import keyboard
 
-#Change model path //
+# Change model path
 model = YOLO("model\yolov5nu.pt")
-
 counter = object_counter.ObjectCounter()
 
+# Open video capture
 cap = cv2.VideoCapture(0)
 assert cap.isOpened(), "Error reading video file"
-
 w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
 
+# Initialize variables
 drawing = False
-
 ix = -1
 iy = -1
+region_points = []
 
-region_points=[]
-
+# Mouse click event handler
 def click_event(event, x, y, flags, param):
     global point1
     global img
@@ -42,18 +41,18 @@ def click_event(event, x, y, flags, param):
         region_points.clear()
         img_og = img.copy()
         cv2.imshow("image", img_og)
-    
-RET,img = cap.read()
+
+# Read the first frame
+RET, img = cap.read()
 cv2.imwrite('captured_photo.jpg', img)
 img_og = img.copy()
 cv2.imshow("image", img)
-
 cv2.setMouseCallback("image", click_event)
-while True:
 
+# Handle user input
+while True:
     k = cv2.waitKey(0)
     print(k)
-
     if k == 27:
         cv2.destroyAllWindows()
         break
@@ -62,9 +61,12 @@ while True:
         cv2.destroyAllWindows()
         break
 
-counter.set_args(view_img=True,reg_pts=region_points,classes_names=model.names,draw_tracks=False)
+# Set counter arguments
+counter.set_args(view_img=True, reg_pts=region_points, classes_names=model.names, draw_tracks=False)
+
+# Process video frames
 while True:
-    counter.set_args(view_img=True,reg_pts=region_points,classes_names=model.names,draw_tracks=False)
+    counter.set_args(view_img=True, reg_pts=region_points, classes_names=model.names, draw_tracks=False)
     success, im0 = cap.read()
 
     if not success:
@@ -72,14 +74,14 @@ while True:
         break
     if keyboard.is_pressed('esc'):
         break
-    tracks = model.track(im0, persist=True, show=False, classes=[0],verbose=True)
+    tracks = model.track(im0, persist=True, show=False, classes=[0], verbose=True)
     if tracks is not None:
-        im0 = counter.start_counting(im0, tracks)       
-    
- 
-    
+        im0 = counter.start_counting(im0, tracks)
 
+# Release video capture and close windows
 cap.release()
 cv2.destroyAllWindows()
+
+# Run object_counter if executed as a script
 if __name__ == "__main__":
     object_counter()
