@@ -1,0 +1,5 @@
+opencv-python
+ultralytics
+shapely>=2.0.0
+numpy
+keyboard
