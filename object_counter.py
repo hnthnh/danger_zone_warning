@@ -1,11 +1,12 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 from collections import defaultdict
 import cv2
+import numpy as np
 from ultralytics.utils.checks import check_imshow, check_requirements
 from ultralytics.utils.plotting import Annotator, colors
 check_requirements("shapely>=2.0.0")
 from shapely.geometry import LineString, Point, Polygon
-
+import configparser
 
 class ObjectCounter:
     """A class to manage the counting of objects in a real-time video stream based on their tracks."""
@@ -158,18 +159,18 @@ class ObjectCounter:
 
         # Annotator Init and region drawing
         self.annotator = Annotator(self.im0, self.tf, self.names)
-       
+        track_history = defaultdict(lambda: [])
         if tracks[0].boxes.id is not None:
             boxes = tracks[0].boxes.xyxy.cpu()
             clss = tracks[0].boxes.cls.cpu().tolist()
             track_ids = tracks[0].boxes.id.int().cpu().tolist()
-
+            annotated_frame = tracks[0].plot()
             # Extract tracks
             for box, track_id, cls in zip(boxes, track_ids, clss):
                 # Draw bounding box
                 self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
                 prev_position = self.track_history[track_id][-2] if len(self.track_history[track_id]) > 1 else None
-                centroid = Point((box[:2] + box[2:]) / 2)
+                centroid = Point((box[:2] + box[2:]) / 2) #so
 
                 # Judment objects
                 if len(self.reg_pts) >= 3:  # any polygon
@@ -212,6 +213,22 @@ class ObjectCounter:
                     else:
                         self.counting_dict[track_id] = None
 
+                ######
+                # Test #
+                ######
+                # Visualize the results on the frame
+                track = track_history[track_id]
+                track.append((centroid.x, centroid.y))  # x, y center point
+                if len(track) > 30:  # retain 90 tracks for 90 frames
+                    track.pop(0)
+                points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
+                cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 0, 230), thickness=50)
+            # Display the annotated frame
+                cv2.imshow("YOLOv8 Tracking", annotated_frame)
+
+     
+
+                #######
             incount_label = "Safe"
             outcount_label = "Danger"
 
@@ -278,7 +295,6 @@ class ObjectCounter:
         if self.view_img:
             self.display_frames()
         return self.im0
-
 
 if __name__ == "__main__":
     ObjectCounter()
