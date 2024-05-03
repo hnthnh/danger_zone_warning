@@ -156,118 +156,101 @@ class ObjectCounter:
             self.selected_point = None
 
     def extract_and_process_tracks(self, tracks):
-
+        incount_label = "Safe"
+        outcount_label = "Danger"
+        
         # Annotator Init and region drawing
         self.annotator = Annotator(self.im0, self.tf, self.names)
         track_history = defaultdict(lambda: [])
+        
         if tracks[0].boxes.id is not None:
             boxes = tracks[0].boxes.xyxy.cpu()
             clss = tracks[0].boxes.cls.cpu().tolist()
             track_ids = tracks[0].boxes.id.int().cpu().tolist()
             annotated_frame = tracks[0].plot()
+            
             # Extract tracks
             for box, track_id, cls in zip(boxes, track_ids, clss):
                 # Draw bounding box
-                self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}", color=colors(int(cls), True))
-                prev_position = self.track_history[track_id][-2] if len(self.track_history[track_id]) > 1 else None
-                centroid = Point((box[:2] + box[2:]) / 2) #so
-
-                # Judment objects
+                self.annotator.box_label(box, label=f"{track_id}:{self.names[cls]}, state : ", color=colors(int(cls), True))
+                prev_position = self.track_history[track_id][-2] if len(self.track_history[track_id]) > 1 else None 
+                centroid = Point((box[:2] + box[2:]) / 2)
+                
+                # Judgment objects
                 if len(self.reg_pts) >= 3:  # any polygon
                     is_inside = self.counting_region.contains(centroid)
                     current_position = "in" if is_inside else "out"
-                    
-                        
 
-                    if prev_position is not None:
-                        if self.counting_dict[track_id] != current_position and is_inside:
-                            self.flag_dict = "Safe"
-                            self.counting_dict[track_id] = "in"
-                           
-                            
-                        elif self.counting_dict[track_id] != current_position and not is_inside:
-                            self.flag_dict = "Danger"
-                            self.counting_dict[track_id] = "out"
-                            
-                        else:
-                            self.counting_dict[track_id] = current_position
-
-                    else:
-                        self.counting_dict[track_id] = current_position
+                    # if prev_position is not None:
+                    #     if self.counting_dict[track_id] != current_position and is_inside:
+                    #         self.flag_dict = "An toan"
+                    #         self.counting_dict[track_id] = "in"
+                    #     elif self.counting_dict[track_id] != current_position and not is_inside:
+                    #         self.flag_dict = "Danger"
+                    #         self.counting_dict[track_id] = "out"
+                    #     else:
+                    #         self.counting_dict[track_id] = current_position
+                    # else:
+                    #     self.counting_dict[track_id] = current_position
 
                 elif len(self.reg_pts) == 2:
                     if prev_position is not None:
-                        is_inside = (box[0] - prev_position[0]) * (
-                            self.counting_region.centroid.x - prev_position[0]
-                        ) > 0
+                        is_inside = (box[0] - prev_position[0]) * (self.counting_region.centroid.x - prev_position[0]) > 0
                         current_position = "in" if is_inside else "out"
 
-                        if self.counting_dict[track_id] != current_position and is_inside:
-                            self.flag_dict = "Safe"
-                            self.counting_dict[track_id] = "in"
-                        elif self.counting_dict[track_id] != current_position and not is_inside:
-                            self.flag_dict = "Danger"
-                            self.counting_dict[track_id] = "out"
-                        else:
-                            self.counting_dict[track_id] = current_position
-                    else:
-                        self.counting_dict[track_id] = None
+                    #     if self.counting_dict[track_id] != current_position and is_inside:
+                    #         self.flag_dict = "Safe"
+                    #         self.counting_dict[track_id] = "in"
+                    #     elif self.counting_dict[track_id] != current_position and not is_inside:
+                    #         self.flag_dict = "Ko"
+                    #         self.counting_dict[track_id] = "out"
+                    #     else:
+                    #         self.counting_dict[track_id] = current_position
+                    # else:
+                    #     self.counting_dict[track_id] = None
 
-                ######
-                # Test #
-                ######
-                # Visualize the results on the frame
-                track = track_history[track_id]
-                track.append((centroid.x, centroid.y))  # x, y center point
-                if len(track) > 30:  # retain 90 tracks for 90 frames
-                    track.pop(0)
-                points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
-                cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 0, 230), thickness=50)
-            # Display the annotated frame
-                cv2.imshow("YOLOv8 Tracking", annotated_frame)
-
-     
-
-                #######
-            incount_label = "Safe"
-            outcount_label = "Danger"
-
-            # Display counts based on user choice
-            counts_label = None
-            if not self.view_in_counts and not self.view_out_counts:
+                # Display counts based on user choice
                 counts_label = None
-            elif not self.view_in_counts:
-                counts_label = outcount_label
-                self.annotator.count_labels(
-                        color=(255, 255, 255)
-                        )           
+                color_box = None
+                if not self.view_in_counts and not self.view_out_counts:
+                    counts_label = None
+                
+                elif not self.view_in_counts:
+                    counts_label = outcount_label
+                elif not self.view_out_counts:
+                    counts_label = incount_label
+                else:
+                    if current_position is not None :
+                        if current_position == "in" : 
+                            counts_label = f"{incount_label}"
+                        elif current_position =="out":
+                            counts_label = f"{outcount_label}"
 
-            elif not self.view_out_counts:
-                counts_label = incount_label
-                self.annotator.count_labels(
-                        color=(255, 255, 255)
-                        )
-            else:
-                if current_position is not None :
-                    if current_position == "in" : 
-                        counts_label = f"{incount_label}"
-                    elif current_position =="out":
-                        counts_label = f"{outcount_label}"
-                    else :
-                        counts_label = ""
+                if counts_label is not None:
+                    # self.annotator.count_labels(
+                    #     counts=counts_label,
+                    #     count_txt_size=self.count_txt_thickness,
+                    #     txt_color=self.count_txt_color
+                    # )
+                    self.annotator.box_label(
+                        box, 
+                        label=f"{track_id}:{self.names[cls]}, state : {counts_label}", 
+                        color=colors(int(track_id), True)
+                    )
 
-            if counts_label is not None:
-                        self.annotator.count_labels(
-                        counts=counts_label,
-                        count_txt_size=self.count_txt_thickness,
-                        txt_color=self.count_txt_color
-                        )
-            if counts_label is None : 
-                        self.annotator.count_labels(
-                        counts="No Object",
-                        count_txt_size=self.count_txt_thickness,
-                        txt_color=self.count_txt_color
-                        )
+                if counts_label is None : 
+                    # self.annotator.count_labels(
+                    #     counts=counts_label,
+                    #     count_txt_size=self.count_txt_thickness,
+                    #     txt_color=self.count_txt_color
+                    # )
+                    self.annotator.box_label(
+                        box, 
+                        label=f"{track_id}:{self.names[cls]}, state : {counts_label}", 
+                        color=colors(int(track_id), True)
+                    )
+
+                
 
     def display_frames(self):
         """Display frame."""
